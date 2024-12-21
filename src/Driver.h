@@ -2,14 +2,30 @@
 #define DRIVER_H
 
 #include <string>
+#include <utility>
 #include "Rating.h"
 
 class Driver {
+private:
+    std::string driverID;
+    std::string name;
+    std::string password;
+    std::string vehicleRegistration;
+    std::string phoneNumber;
+    double rating;
+    double latitude;
+    double longitude;
+    bool available;
+    double ratePerKm;
+    double destinationLatitude;
+    double destinationLongitude;
+
 public:
-    Driver(int id, const std::string& name, const std::string& password);
-    bool login(const std::string& username, const std::string& password);
+    Driver(const std::string& name, const std::string& password, const std::string& vehicleRegistration, const std::string& phoneNumber, double ratePerKm);
+    void registerDriver();
+    bool login(const std::string& driverID, const std::string& password);
     bool acceptRide(int rideRequestID, double userLatitude, double userLongitude);
-    int getDriverID() const;
+    std::string getDriverID() const;
     std::string getName() const;
     double getRating() const;
     void setRating(double newRating);
@@ -18,27 +34,12 @@ public:
     bool completeRide(int rideRequestID);
     void setAvailability(bool available);
     bool isAvailable() const;
-    double getRate() const;
-    void setRate(double rate);
+    double getRatePerKm() const;
+    void setRatePerKm(double rate);
     void setDestination(double latitude, double longitude);
     bool processPayment(double amount);
     bool isWithinRadius(double userLatitude, double userLongitude, double radius) const;
-    void setInAppPaymentSelected(bool selected);
-    void setPaymentProcessed(bool processed);
-
-private:
-    int driverID;
-    std::string name;
-    std::string password;
-    Rating* rating;
-    double latitude;
-    double longitude;
-    bool available;
-    double rate;
-    double destinationLatitude;
-    double destinationLongitude;
-    bool inAppPaymentSelected;
-    bool paymentProcessed;
+    std::string generateDriverID(const std::string& name, const std::string& phoneNumber, int index) const;
 };
 
 #endif // DRIVER_H

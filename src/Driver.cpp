@@ -1,56 +1,79 @@
 #include "Driver.h"
 #include <iostream>
-#include <string>
-#include <unordered_map>
+#include <fstream>
 #include <cmath>
 
 using namespace std;
 
-// Placeholder for user credentials
-unordered_map<string, string> userCredentials = {
-    {"driver1", "password1"},
-    {"driver2", "password2"}
-};
+Driver::Driver(const string& name, const string& password, const string& vehicleRegistration, const string& phoneNumber, double ratePerKm)
+    : name(name), password(password), vehicleRegistration(vehicleRegistration), phoneNumber(phoneNumber), rating(0.0), latitude(0.0), longitude(0.0), available(true), ratePerKm(ratePerKm), destinationLatitude(0.0), destinationLongitude(0.0) {
+    static int index = 0;
+    driverID = generateDriverID(name, phoneNumber, index++);
+}
 
-Driver::Driver(int id, const string& name, const string& password) 
-    : driverID(id), name(name), password(password), rating(new Rating(this, 0.0)), latitude(0.0), longitude(0.0), available(false), rate(0.0), destinationLatitude(0.0), destinationLongitude(0.0), inAppPaymentSelected(false), paymentProcessed(false) {}
-
-bool Driver::login(const string& username, const string& password) {
-    auto it = userCredentials.find(username);
-    if (it != userCredentials.end() && it->second == password) {
-        cout << "Login successful for driver " << username << endl;
-        return true;
+void Driver::registerDriver() {
+    ofstream driverDataFile("driverdata.txt", ios::app);
+    if (driverDataFile.is_open()) {
+        driverDataFile << driverID << " " << name << " " << password << " " << vehicleRegistration << " " << phoneNumber << " " << ratePerKm << endl;
+        driverDataFile.close();
+        cout << "Driver registered successfully! Your driverID is: " << driverID << endl;
     } else {
-        cout << "Login failed for driver " << username << endl;
-        return false;
+        cout << "Unable to open file for writing driver data." << endl;
     }
+}
+
+bool Driver::login(const string& inputDriverID, const string& inputPassword) {
+    ifstream driverDataFile("driverdata.txt");
+    string fileDriverID, fileName, filePassword, fileVehicleRegistration, filePhoneNumber;
+    double fileRatePerKm;
+    if (driverDataFile.is_open()) {
+        while (driverDataFile >> fileDriverID >> fileName >> filePassword >> fileVehicleRegistration >> filePhoneNumber >> fileRatePerKm) {
+            if (fileDriverID == inputDriverID && filePassword == inputPassword) {
+                driverID = fileDriverID;
+                name = fileName;
+                password = filePassword;
+                vehicleRegistration = fileVehicleRegistration;
+                phoneNumber = filePhoneNumber;
+                ratePerKm = fileRatePerKm;
+                driverDataFile.close();
+                cout << "Login successful!" << endl;
+                return true;
+            }
+        }
+        driverDataFile.close();
+    } else {
+        cout << "Unable to open file for reading driver data." << endl;
+    }
+    cout << "Invalid driverID or password." << endl;
+    return false;
 }
 
 bool Driver::acceptRide(int rideRequestID, double userLatitude, double userLongitude) {
-    if (isWithinRadius(userLatitude, userLongitude, 5.0) && available) {
+    if (available && isWithinRadius(userLatitude, userLongitude, 10.0)) {
         cout << "Ride request " << rideRequestID << " accepted by driver " << name << endl;
-        // Additional logic for accepting the ride can be added here
+        setAvailability(false);
+        setDestination(userLatitude, userLongitude);
         return true;
     } else {
-        cout << "Ride request " << rideRequestID << " rejected by driver " << name << endl;
+        cout << "Ride request " << rideRequestID << " cannot be accepted by driver " << name << endl;
         return false;
     }
 }
 
-int Driver::getDriverID() const {
+string Driver::getDriverID() const {
     return driverID;
 }
 
-std::string Driver::getName() const {
+string Driver::getName() const {
     return name;
 }
 
 double Driver::getRating() const {
-    return rating->getRating();
+    return rating;
 }
 
 void Driver::setRating(double newRating) {
-    rating->setRating(newRating);
+    rating = newRating;
 }
 
 void Driver::updateLocation(double latitude, double longitude) {
@@ -59,13 +82,13 @@ void Driver::updateLocation(double latitude, double longitude) {
     cout << "Driver " << name << " location updated to (" << latitude << ", " << longitude << ")" << endl;
 }
 
-std::pair<double, double> Driver::getLocation() const {
+pair<double, double> Driver::getLocation() const {
     return make_pair(latitude, longitude);
 }
 
 bool Driver::completeRide(int rideRequestID) {
     cout << "Ride request " << rideRequestID << " completed by driver " << name << endl;
-    // Additional logic for completing the ride can be added here
+    setAvailability(true);
     return true;
 }
 
@@ -77,54 +100,29 @@ bool Driver::isAvailable() const {
     return available;
 }
 
-double Driver::getRate() const {
-    return rate;
+double Driver::getRatePerKm() const {
+    return ratePerKm;
 }
 
-void Driver::setRate(double rate) {
-    this->rate = rate;
+void Driver::setRatePerKm(double rate) {
+    this->ratePerKm = rate;
 }
 
 void Driver::setDestination(double latitude, double longitude) {
-    destinationLatitude = latitude;
-    destinationLongitude = longitude;
+    this->destinationLatitude = latitude;
+    this->destinationLongitude = longitude;
 }
 
 bool Driver::processPayment(double amount) {
-    if (inAppPaymentSelected) {
-        paymentProcessed = true;
-        cout << "Payment of " << amount << " processed for driver " << name << endl;
-        return true;
-    } else {
-        cout << "Payment not processed for driver " << name << endl;
-        return false;
-    }
+    cout << "Payment of " << amount << " processed for driver " << name << endl;
+    return true;
 }
 
 bool Driver::isWithinRadius(double userLatitude, double userLongitude, double radius) const {
-    const double R = 6371.0; // Radius of the Earth in kilometers
-    double lat1 = latitude * M_PI / 180.0;
-    double lon1 = longitude * M_PI / 180.0;
-    double lat2 = userLatitude * M_PI / 180.0;
-    double lon2 = userLongitude * M_PI / 180.0;
-
-    double dlat = lat2 - lat1;
-    double dlon = lon2 - lon1;
-
-    double a = sin(dlat / 2) * sin(dlat / 2) +
-               cos(lat1) * cos(lat2) *
-               sin(dlon / 2) * sin(dlon / 2);
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-
-    double distance = R * c; // Distance in kilometers
-
+    double distance = sqrt(pow(latitude - userLatitude, 2) + pow(longitude - userLongitude, 2));
     return distance <= radius;
 }
 
-void Driver::setInAppPaymentSelected(bool selected) {
-    inAppPaymentSelected = selected;
-}
-
-void Driver::setPaymentProcessed(bool processed) {
-    paymentProcessed = processed;
+string Driver::generateDriverID(const string& name, const string& phoneNumber, int index) const {
+    return name + phoneNumber.substr(phoneNumber.length() - 3) + to_string(index);
 }

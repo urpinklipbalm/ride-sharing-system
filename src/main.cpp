@@ -26,79 +26,108 @@ int main() {
 
     while (true) {
         cout << "Please choose an option: " << endl;
-        cout << "1. User Registration" << endl;
-        cout << "2. User Login" << endl;
-        cout << "3. Driver Login" << endl;
-        cout << "4. Request Ride" << endl;
-        cout << "5. Update Traffic Data" << endl;
-        cout << "6. Display Traffic Updates" << endl;
-        cout << "7. Exit" << endl;
+        cout << "1. User Login" << endl;
+        cout << "2. Driver Login" << endl;
+        cout << "3. Exit" << endl;
 
         int choice;
         cin >> choice;
 
         switch (choice) {
             case 1: {
-                string userID, name, password;
-                cout << "Enter user ID: ";
+                string userID, password;
+                cout << "Enter userID: ";
                 cin >> userID;
-                cout << "Enter name: ";
-                cin >> name;
                 cout << "Enter password: ";
                 cin >> password;
-                user = new User(stoi(userID), name, password);
-                user->registerUser();
-                break;
-            }
-            case 2:
-                if (user) {
-                    user->login();
-                } else {
-                    cout << "No user registered. Please register first." << endl;
+                user = new User("", "", "");
+                if (user->login(userID, password)) {
+                    while (true) {
+                        cout << "Please choose an option: " << endl;
+                        cout << "1. Request Ride" << endl;
+                        cout << "2. View Ride History" << endl;
+                        cout << "3. Log Out" << endl;
+
+                        int userChoice;
+                        cin >> userChoice;
+
+                        if (userChoice == 1) {
+                            double destLat, destLon;
+                            cout << "Enter destination latitude: ";
+                            cin >> destLat;
+                            cout << "Enter destination longitude: ";
+                            cin >> destLon;
+                            user->requestRide(destLat, destLon);
+                            cout << "Choose payment method: " << endl;
+                            cout << "1. In-app Payment" << endl;
+                            cout << "2. Cash Payment" << endl;
+
+                            int paymentChoice;
+                            cin >> paymentChoice;
+
+                            if (paymentChoice == 1) {
+                                double amount = pricing.calculatePrice(user->getLocation().first, user->getLocation().second, destLat, destLon, driver->getRatePerKm());
+                                driver->processPayment(amount);
+                            } else {
+                                cout << "Pay cash to the driver." << endl;
+                            }
+                        } else if (userChoice == 2) {
+                            vector<pair<int, string>> history = user->getRideHistory();
+                            for (const auto& ride : history) {
+                                cout << "Ride ID: " << ride.first << ", Status: " << ride.second << endl;
+                            }
+                        } else if (userChoice == 3) {
+                            delete user;
+                            user = nullptr;
+                            break;
+                        } else {
+                            cout << "Invalid option. Please try again." << endl;
+                        }
+                    }
                 }
                 break;
-            case 3: {
-                string driverID, name, password;
-                cout << "Enter driver ID: ";
+            }
+            case 2: {
+                string driverID, password;
+                cout << "Enter driverID: ";
                 cin >> driverID;
-                cout << "Enter name: ";
-                cin >> name;
                 cout << "Enter password: ";
                 cin >> password;
-                driver = new Driver(stoi(driverID), name, password);
-                driver->login(driverID, password);
+                driver = new Driver("", "", "", "", 0.0);
+                if (driver->login(driverID, password)) {
+                    while (true) {
+                        cout << "Please choose an option: " << endl;
+                        cout << "1. Turn Availability On" << endl;
+                        cout << "2. Receive Ride Requests" << endl;
+                        cout << "3. Log Out" << endl;
+
+                        int driverChoice;
+                        cin >> driverChoice;
+
+                        if (driverChoice == 1) {
+                            driver->setAvailability(true);
+                            cout << "Availability turned on." << endl;
+                        } else if (driverChoice == 2) {
+                            if (!rideQueue.isEmpty()) {
+                                auto rideRequest = rideQueue.getNextRequest();
+                                if (driver->acceptRide(rideRequest.getID(), rideRequest.getUserLatitude(), rideRequest.getUserLongitude())) {
+                                    driver->completeRide(rideRequest.getID());
+                                }
+                            } else {
+                                cout << "No ride requests available." << endl;
+                            }
+                        } else if (driverChoice == 3) {
+                            delete driver;
+                            driver = nullptr;
+                            break;
+                        } else {
+                            cout << "Invalid option. Please try again." << endl;
+                        }
+                    }
+                }
                 break;
             }
-            case 4: {
-                int id;
-                double userLat, userLon, destLat, destLon;
-                cout << "Enter request ID: ";
-                cin >> id;
-                cout << "Enter user latitude: ";
-                cin >> userLat;
-                cout << "Enter user longitude: ";
-                cin >> userLon;
-                cout << "Enter destination latitude: ";
-                cin >> destLat;
-                cout << "Enter destination longitude: ";
-                cin >> destLon;
-                rideRequest.createRequest(id, userLat, userLon, destLat, destLon);
-                rideQueue.addRequest(rideRequest);
-                break;
-            }
-            case 5: {
-                string location, status;
-                cout << "Enter location: ";
-                cin >> location;
-                cout << "Enter traffic status: ";
-                cin >> status;
-                trafficUpdates.updateTrafficData(location, status);
-                break;
-            }
-            case 6:
-                trafficUpdates.displayAllTrafficUpdates();
-                break;
-            case 7:
+            case 3:
                 cout << "Exiting the system." << endl;
                 delete user;
                 delete driver;
