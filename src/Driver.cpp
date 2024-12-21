@@ -12,37 +12,14 @@ Driver::Driver(const string& name, const string& password, const string& vehicle
 }
 
 void Driver::registerDriver() {
-    ofstream driverDataFile("driverdata.txt", ios::app);
-    if (driverDataFile.is_open()) {
-        driverDataFile << driverID << " " << name << " " << password << " " << vehicleRegistration << " " << phoneNumber << " " << ratePerKm << endl;
-        driverDataFile.close();
-        cout << "Driver registered successfully! Your driverID is: " << driverID << endl;
-    } else {
-        cout << "Unable to open file for writing driver data." << endl;
-    }
+    saveDriverData();
+    cout << "Driver registered successfully! Your driverID is: " << driverID << endl;
 }
 
 bool Driver::login(const string& inputDriverID, const string& inputPassword) {
-    ifstream driverDataFile("driverdata.txt");
-    string fileDriverID, fileName, filePassword, fileVehicleRegistration, filePhoneNumber;
-    double fileRatePerKm;
-    if (driverDataFile.is_open()) {
-        while (driverDataFile >> fileDriverID >> fileName >> filePassword >> fileVehicleRegistration >> filePhoneNumber >> fileRatePerKm) {
-            if (fileDriverID == inputDriverID && filePassword == inputPassword) {
-                driverID = fileDriverID;
-                name = fileName;
-                password = filePassword;
-                vehicleRegistration = fileVehicleRegistration;
-                phoneNumber = filePhoneNumber;
-                ratePerKm = fileRatePerKm;
-                driverDataFile.close();
-                cout << "Login successful!" << endl;
-                return true;
-            }
-        }
-        driverDataFile.close();
-    } else {
-        cout << "Unable to open file for reading driver data." << endl;
+    if (loadDriverData(inputDriverID, *this) && password == inputPassword) {
+        cout << "Login successful!" << endl;
+        return true;
     }
     cout << "Invalid driverID or password." << endl;
     return false;
@@ -124,5 +101,42 @@ bool Driver::isWithinRadius(double userLatitude, double userLongitude, double ra
 }
 
 string Driver::generateDriverID(const string& name, const string& phoneNumber, int index) const {
+    if (phoneNumber.length() < 3) {
+        throw out_of_range("Phone number is too short to generate driverID");
+    }
     return name + phoneNumber.substr(phoneNumber.length() - 3) + to_string(index);
+}
+
+void Driver::saveDriverData() const {
+    ofstream driverDataFile("driverdata.txt", ios::app);
+    if (driverDataFile.is_open()) {
+        driverDataFile << driverID << " " << name << " " << password << " " << vehicleRegistration << " " << phoneNumber << " " << ratePerKm << endl;
+        driverDataFile.close();
+    } else {
+        cout << "Unable to open file for writing driver data." << endl;
+    }
+}
+
+bool Driver::loadDriverData(const string& inputDriverID, Driver& driver) {
+    ifstream driverDataFile("driverdata.txt");
+    string fileDriverID, fileName, filePassword, fileVehicleRegistration, filePhoneNumber;
+    double fileRatePerKm;
+    if (driverDataFile.is_open()) {
+        while (driverDataFile >> fileDriverID >> fileName >> filePassword >> fileVehicleRegistration >> filePhoneNumber >> fileRatePerKm) {
+            if (fileDriverID == inputDriverID) {
+                driver.driverID = fileDriverID;
+                driver.name = fileName;
+                driver.password = filePassword;
+                driver.vehicleRegistration = fileVehicleRegistration;
+                driver.phoneNumber = filePhoneNumber;
+                driver.ratePerKm = fileRatePerKm;
+                driverDataFile.close();
+                return true;
+            }
+        }
+        driverDataFile.close();
+    } else {
+        cout << "Unable to open file for reading driver data." << endl;
+    }
+    return false;
 }

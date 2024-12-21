@@ -2,24 +2,21 @@
 #define RIDEREQUEST_H
 
 class RideRequest {
-public:
-    RideRequest();
-    RideRequest(int id, double userLatitude, double userLongitude, double destinationLatitude, double destinationLongitude);
-    int getRequestID() const;
-    double getUserLatitude() const;
-    double getUserLongitude() const;
-    double getDestinationLatitude() const;
-    double getDestinationLongitude() const;
-    double calculateDistance() const;
-    double calculatePrice() const;
-    void createRequest(int id, double userLat, double userLon, double destLat, double destLon);
-
 private:
     int requestID;
     double userLatitude;
     double userLongitude;
     double destinationLatitude;
     double destinationLongitude;
+
+public:
+    RideRequest();
+    void createRequest(int id, double userLat, double userLon, double destLat, double destLon);
+    int getID() const;
+    double getUserLatitude() const;
+    double getUserLongitude() const;
+    double getDestinationLatitude() const;
+    double getDestinationLongitude() const;
 };
 
 #endif // RIDEREQUEST_H

@@ -9,40 +9,26 @@ using namespace std;
 // Placeholder for ride requests
 queue<pair<string, pair<double, double>>> rideRequests; // Pair of user ID and destination coordinates
 
+User::User() : latitude(0.0), longitude(0.0) {}
+
 User::User(const string& name, const string& phoneNumber, const string& password)
     : name(name), phoneNumber(phoneNumber), password(password), latitude(0.0), longitude(0.0) {
-    userID = generateUserID(name, phoneNumber);
-}
-
-void User::registerUser() {
-    ofstream userDataFile("userdata.txt", ios::app);
-    if (userDataFile.is_open()) {
-        userDataFile << userID << " " << name << " " << phoneNumber << " " << password << endl;
-        userDataFile.close();
-        cout << "User registered successfully! Your userID is: " << userID << endl;
+    if (phoneNumber.length() >= 3) {
+        userID = generateUserID(name, phoneNumber);
     } else {
-        cout << "Unable to open file for writing user data." << endl;
+        throw out_of_range("Phone number is too short to generate userID");
     }
 }
 
+void User::registerUser() {
+    saveUserData();
+    cout << "User registered successfully! Your userID is: " << userID << endl;
+}
+
 bool User::login(const string& inputUserID, const string& inputPassword) {
-    ifstream userDataFile("userdata.txt");
-    string fileUserID, fileName, filePhoneNumber, filePassword;
-    if (userDataFile.is_open()) {
-        while (userDataFile >> fileUserID >> fileName >> filePhoneNumber >> filePassword) {
-            if (fileUserID == inputUserID && filePassword == inputPassword) {
-                userID = fileUserID;
-                name = fileName;
-                phoneNumber = filePhoneNumber;
-                password = filePassword;
-                userDataFile.close();
-                cout << "Login successful!" << endl;
-                return true;
-            }
-        }
-        userDataFile.close();
-    } else {
-        cout << "Unable to open file for reading user data." << endl;
+    if (loadUserData(inputUserID, *this) && password == inputPassword) {
+        cout << "Login successful!" << endl;
+        return true;
     }
     cout << "Invalid userID or password." << endl;
     return false;
@@ -73,4 +59,35 @@ pair<double, double> User::getLocation() const {
 
 string User::generateUserID(const string& name, const string& phoneNumber) const {
     return name + phoneNumber.substr(phoneNumber.length() - 3);
+}
+
+void User::saveUserData() const {
+    ofstream userDataFile("userdata.txt", ios::app);
+    if (userDataFile.is_open()) {
+        userDataFile << userID << " " << name << " " << phoneNumber << " " << password << endl;
+        userDataFile.close();
+    } else {
+        cout << "Unable to open file for writing user data." << endl;
+    }
+}
+
+bool User::loadUserData(const string& inputUserID, User& user) {
+    ifstream userDataFile("userdata.txt");
+    string fileUserID, fileName, filePhoneNumber, filePassword;
+    if (userDataFile.is_open()) {
+        while (userDataFile >> fileUserID >> fileName >> filePhoneNumber >> filePassword) {
+            if (fileUserID == inputUserID) {
+                user.userID = fileUserID;
+                user.name = fileName;
+                user.phoneNumber = filePhoneNumber;
+                user.password = filePassword;
+                userDataFile.close();
+                return true;
+            }
+        }
+        userDataFile.close();
+    } else {
+        cout << "Unable to open file for reading user data." << endl;
+    }
+    return false;
 }

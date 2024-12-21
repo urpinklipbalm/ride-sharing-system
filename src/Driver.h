@@ -40,6 +40,8 @@ public:
     bool processPayment(double amount);
     bool isWithinRadius(double userLatitude, double userLongitude, double radius) const;
     std::string generateDriverID(const std::string& name, const std::string& phoneNumber, int index) const;
+    void saveDriverData() const;
+    static bool loadDriverData(const std::string& driverID, Driver& driver);
 };
 
 #endif // DRIVER_H

@@ -8,8 +8,7 @@ class RideQueue {
 public:
     RideQueue();
     void addRequest(const RideRequest& request);
-    void removeRequest();
-    RideRequest processNextRequest();
+    RideRequest getNextRequest();
     bool isEmpty() const;
     size_t size() const;
 

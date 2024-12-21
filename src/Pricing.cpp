@@ -1,28 +1,32 @@
 #include "Pricing.h"
+#include <cmath>
 #include <algorithm>
 
-Pricing::Pricing()
-    : baseRate(2.0), perMileRate(1.5), perMinuteRate(0.5), surgeMultiplier(1.5), trafficMultiplier(1.0) {
-    timeOfDayMultiplier[0] = 1.0;  // Midnight to 1 AM
-    timeOfDayMultiplier[8] = 1.2;  // 8 AM to 9 AM
-    timeOfDayMultiplier[17] = 1.3; // 5 PM to 6 PM
-    // Adding more time slots as needed!!!!
+Pricing::Pricing() 
+    : baseRate(5.0), perMileRate(2.0), perMinuteRate(0.5), surgeMultiplier(1.5), trafficMultiplier(1.2) {
+    // Initialize time of day multipliers (example values)
+    timeOfDayMultiplier[0] = 1.0;  // Midnight
+    timeOfDayMultiplier[6] = 1.2;  // Early morning
+    timeOfDayMultiplier[12] = 1.5; // Noon
+    timeOfDayMultiplier[18] = 1.3; // Evening
 }
 
-double Pricing::calculatePrice(int distance, int timeOfDay, bool surgePricing, double trafficFactor) {
+double Pricing::calculatePrice(double distance, int timeOfDay, bool surgePricing, double trafficFactor) {
     double timeMultiplier = 1.0;
     auto it = timeOfDayMultiplier.lower_bound(timeOfDay);
     if (it != timeOfDayMultiplier.end()) {
         timeMultiplier = it->second;
+    } else if (!timeOfDayMultiplier.empty()) {
+        timeMultiplier = timeOfDayMultiplier.rbegin()->second;
     }
 
-    double price = baseRate + (distance * perMileRate) + (distance * perMinuteRate);
-    price *= timeMultiplier;
+    double price = baseRate + (distance * perMileRate) + (distance * perMinuteRate * timeMultiplier);
     if (surgePricing) {
         price *= surgeMultiplier;
     }
     price *= trafficFactor;
 
+    addHistoricalPrice(price);
     return price;
 }
 

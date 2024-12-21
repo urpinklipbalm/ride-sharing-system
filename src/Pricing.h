@@ -7,7 +7,7 @@
 class Pricing {
 public:
     Pricing();
-    double calculatePrice(int distance, int timeOfDay, bool surgePricing, double trafficFactor);
+    double calculatePrice(double distance, int timeOfDay, bool surgePricing, double trafficFactor);
     void addHistoricalPrice(double price);
     std::vector<double> getHistoricalPrices() const;
 

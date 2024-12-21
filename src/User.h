@@ -16,6 +16,7 @@ private:
     double longitude;
 
 public:
+    User();
     User(const std::string& name, const std::string& phoneNumber, const std::string& password);
     void registerUser();
     bool login(const std::string& userID, const std::string& password);
@@ -25,6 +26,8 @@ public:
     void updateLocation(double latitude, double longitude);
     std::pair<double, double> getLocation() const;
     std::string generateUserID(const std::string& name, const std::string& phoneNumber) const;
+    void saveUserData() const;
+    static bool loadUserData(const std::string& userID, User& user);
 };
 
 #endif // USER_H

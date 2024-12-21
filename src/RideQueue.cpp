@@ -1,29 +1,22 @@
 #include "RideQueue.h"
 #include <iostream>
 
+using namespace std;
+
 RideQueue::RideQueue() {}
 
 void RideQueue::addRequest(const RideRequest& request) {
     requests.push(request);
+    cout << "Ride request added to the queue." << endl;
 }
 
-void RideQueue::removeRequest() {
+RideRequest RideQueue::getNextRequest() {
     if (!requests.empty()) {
+        RideRequest request = requests.front();
         requests.pop();
-    } else {
-        std::cerr << "No requests to remove." << std::endl;
+        return request;
     }
-}
-
-RideRequest RideQueue::processNextRequest() {
-    if (!requests.empty()) {
-        RideRequest nextRequest = requests.front();
-        requests.pop();
-        return nextRequest;
-    } else {
-        std::cerr << "No requests to process." << std::endl;
-        return RideRequest(); // Return a default-constructed RideRequest
-    }
+    return RideRequest(); // Return an empty request if the queue is empty
 }
 
 bool RideQueue::isEmpty() const {
