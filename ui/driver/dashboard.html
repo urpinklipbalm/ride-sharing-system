@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to your Driver Dashboard!</h1>
+        <button class="btn" onclick="turnAvailabilityOn()">Turn Availability On</button>
+        <button class="btn" onclick="receiveRideRequests()">Receive Ride Requests</button>
+        <button class="btn" onclick="logout()">Log Out</button>
+    </div>
+
+    <script>
+        function turnAvailabilityOn() {
+            // Logic for turning availability on
+            alert("Availability turned on!");
+        }
+
+        function receiveRideRequests() {
+            // Logic for receiving ride requests
+            alert("No ride requests available.");
+        }
+
+        function logout() {
+            // Handle logout logic
+            window.location.href = "../index.html";
+        }
+    </script>
+</body>
+</html>
