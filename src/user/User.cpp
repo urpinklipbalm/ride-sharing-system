@@ -5,10 +5,12 @@
 
 using namespace std;
 
-User::User() {}
+int User::userCount = 0;
+
+User::User() : latitude(0), longitude(0) {}
 
 User::User(const std::string& name, const std::string& phoneNumber, const std::string& password)
-    : name(name), phoneNumber(phoneNumber), password(password) {
+    : name(name), phoneNumber(phoneNumber), password(password), latitude(0), longitude(0) {
     userID = generateUserID(name, phoneNumber);
 }
 
@@ -28,21 +30,19 @@ bool User::login(const std::string& userID, const std::string& password) {
     return false;
 }
 
-void User::requestRide(double destinationLatitude, double destinationLongitude) {
-    // Implementation for requesting a ride
+void User::addRideToHistory(int rideID, const std::string& status, const Location& pickup, const Location& destination, const std::string& driver) {
+    rideHistory.push_back(make_tuple(rideID, status, pickup, destination, driver));
+    updateUserData(*this);
 }
 
-void User::addRideToHistory(int rideID, const std::string& status) {
-    rideHistory.push_back({rideID, status});
-}
-
-std::vector<std::pair<int, std::string>> User::getRideHistory() const {
+std::vector<std::tuple<int, std::string, Location, Location, std::string>> User::getRideHistory() const {
     return rideHistory;
 }
 
 void User::updateLocation(double latitude, double longitude) {
     this->latitude = latitude;
     this->longitude = longitude;
+    updateUserData(*this);
 }
 
 std::pair<double, double> User::getLocation() const {
@@ -50,7 +50,7 @@ std::pair<double, double> User::getLocation() const {
 }
 
 std::string User::generateUserID(const std::string& name, const std::string& phoneNumber) const {
-    return name + phoneNumber.substr(phoneNumber.size() - 2) + to_string(rand() % 1000);
+    return name + phoneNumber.substr(phoneNumber.size() - 2) + to_string(userCount++);
 }
 
 void User::saveUserData() const {
@@ -58,7 +58,7 @@ void User::saveUserData() const {
     if (!file) {
         throw runtime_error("Unable to save user data.");
     }
-    file << userID << " " << name << " " << phoneNumber << " " << password << endl;
+    file << userID << " " << name << " " << phoneNumber << " " << password << " " << latitude << " " << longitude << endl;
     file.close();
 }
 
@@ -68,16 +68,54 @@ bool User::loadUserData(const std::string& userID, User& user) {
         return false;
     }
     string id, name, phone, pass;
-    while (file >> id >> name >> phone >> pass) {
+    double lat, lon;
+    while (file >> id >> name >> phone >> pass >> lat >> lon) {
         if (id == userID) {
             user.userID = id;
             user.name = name;
             user.phoneNumber = phone;
             user.password = pass;
+            user.latitude = lat;
+            user.longitude = lon;
             file.close();
             return true;
         }
     }
     file.close();
     return false;
+}
+
+void User::updateUserData(const User& user) {
+    ifstream file("userdata.txt");
+    ofstream tempFile("temp.txt");
+    if (!file || !tempFile) {
+        throw runtime_error("Unable to update user data.");
+    }
+    string id, name, phone, pass;
+    double lat, lon;
+    while (file >> id >> name >> phone >> pass >> lat >> lon) {
+        if (id == user.userID) {
+            tempFile << user.userID << " " << user.name << " " << user.phoneNumber << " " << user.password << " " << user.latitude << " " << user.longitude << endl;
+        } else {
+            tempFile << id << " " << name << " " << phone << " " << pass << " " << lat << " " << lon << endl;
+        }
+    }
+    file.close();
+    tempFile.close();
+    remove("userdata.txt");
+    rename("temp.txt", "userdata.txt");
+}
+
+void User::viewProfile() const {
+    cout << "\n ૮₍˶ᵔᵕᵔ˶₎ა User Profile:" << endl;
+    cout << " — User ID: " << userID << endl;
+    cout << " — Name: " << name << endl;
+    cout << " — Phone Number: " << phoneNumber << endl;
+    cout << " — Current Location: (" << latitude << ", " << longitude << ")" << endl;
+    cout << "\n ˚ ༘`✦ ˑ ִֶ 𓂃⊹ Ride History: " << endl;
+    for (const auto& ride : rideHistory) {
+        cout << " → Ride ID: " << get<0>(ride) << ",\n — Status: " << get<1>(ride) 
+             << ",\n — Pickup: " << get<2>(ride).getName() << ",\n — Destination: " << get<3>(ride).getName()
+             << ",\n — Driver: " << get<4>(ride) << endl;
+    }
 }

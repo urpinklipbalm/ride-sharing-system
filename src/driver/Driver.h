@@ -1,9 +1,10 @@
 #ifndef DRIVER_H
 #define DRIVER_H
-
 #include <string>
 #include <vector>
 #include "../location/Location.h"
+#include "../pricing/Pricing.h"
+#include "../rating/Rating.h"
 
 class Driver {
 private:
@@ -16,8 +17,13 @@ private:
     double latitude;
     double longitude;
     bool available;
-    std::vector<std::pair<int, std::string>> rideHistory; // Pair of ride ID and status
-    std::vector<double> ratings;
+    double rating;
+    int totalRatings;
+    int totalCompletedRides;
+    std::vector<std::tuple<int, std::string, Location, Location, double>> rideHistory;
+    static int driverCount;
+    Pricing pricing;
+    Rating ratingSystem;
 
 public:
     Driver();
@@ -28,15 +34,28 @@ public:
     bool isAvailable() const;
     void updateLocation(double latitude, double longitude);
     std::pair<double, double> getLocation() const;
-    void addRideToHistory(int rideID, const std::string& status);
-    std::vector<std::pair<int, std::string>> getRideHistory() const;
+    void addRideToHistory(int rideID, const std::string& status, const Location& pickup, const Location& destination, double fare);
+    std::vector<std::tuple<int, std::string, Location, Location, double>> getRideHistory() const;
     void addRating(double rating);
     double getRating() const;
     std::string getName() const;
+    double getRatePerKm() const; // Add this getter method
     static std::vector<Driver> getAvailableDrivers(const Location& pickupLocation);
     std::string generateDriverID(const std::string& name, const std::string& phoneNumber) const;
     void saveDriverData() const;
     static bool loadDriverData(const std::string& driverID, Driver& driver);
+    static void updateDriverData(const Driver& driver);
+    void viewProfile() const;
+
+    bool operator>(const Driver& other) const {
+        return getRating() > other.getRating();
+    }
+
+    bool operator<(const Driver& other) const {
+        return getRating() < other.getRating();
+    }
+
+    double calculateFare(double distance, int timeOfDay, bool surgePricing, double trafficFactor) const;
 };
 
 #endif // DRIVER_H

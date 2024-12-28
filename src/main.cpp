@@ -1,9 +1,13 @@
 #include <iostream>
+#include <cmath>
+#include <chrono>
 #include "user/User.h"
 #include "driver/Driver.h"
 #include "location/Location.h"
 #include "utils/Utils.h"
 #include "rides/RideRequest.h"
+#include "graph/Graph.h"
+#include "data structures/PriorityQueue.h"
 
 using namespace std;
 
@@ -11,10 +15,10 @@ void userInterface();
 void driverInterface();
 
 int main() {
-    cout << "Welcome to the Ride-Sharing System!" << endl;
+    cout << "\n‧₊˚✧  Welcome to the SmartRide  ✧˚₊‧\n" << endl;
 
     while (true) {
-        cout << "Are you a User or a Driver?" << endl;
+        cout << "\n‧₊˚ ┊ Are you a User or a Driver?\n" << endl;
         cout << "1. User" << endl;
         cout << "2. Driver" << endl;
         cout << "3. Exit" << endl;
@@ -27,7 +31,7 @@ int main() {
         } else if (roleChoice == 2) {
             driverInterface();
         } else if (roleChoice == 3) {
-            cout << "Exiting the system." << endl;
+            cout << "\nExiting the system\n · · ─ ·𖥸· ─ · ·\n" << endl;
             break;
         }
     }
@@ -37,7 +41,7 @@ int main() {
 
 void userInterface() {
     while (true) {
-        cout << "Please choose an option: " << endl;
+        cout << "\n‧₊˚ ┊ Please choose an option: \n" << endl;
         cout << "1. User Login" << endl;
         cout << "2. User Register" << endl;
         cout << "3. Back" << endl;
@@ -47,122 +51,133 @@ void userInterface() {
 
         if (userChoice == 1) {
             string userID, password;
-            cout << "Enter userID: ";
+            cout << "\n ↳ Enter userID: ";
             cin >> userID;
-            cout << "Enter password: ";
+            cout << " ↳ Enter password: ";
             cin >> password;
             User user;
             if (user.login(userID, password)) {
+                cout << "\n₊ ⊹ User logged in successfully ₊ ⊹" << endl; 
                 while (true) {
-                    cout << "Please choose an option: " << endl;
+                    cout << "\n‧₊˚ ┊ Please choose an option: \n" << endl;
                     cout << "1. Request Ride" << endl;
                     cout << "2. View Ride History" << endl;
-                    cout << "3. Log Out" << endl;
+                    cout << "3. View Profile" << endl;
+                    cout << "4. Log Out\n" << endl;
 
-                    int userAction = getValidatedInput(1, 3);
+                    int userAction = getValidatedInput(1, 4);
                     if (userAction == -1) continue;
 
                     if (userAction == 1) {
-                        Location pickup, destination;
-                        string input;
-                        cout << "Enter pickup location (coordinates or name): ";
-                        cin >> input;
-                        if (isdigit(input[0])) {
-                            int x = stoi(input);
-                            int y;
-                            cin >> y;
-                            pickup = Location::getLocationByCoordinates(x, y);
-                        } else {
-                            pickup = Location::getLocationByName(input);
-                        }
-
-                        if (pickup.getName() == "invalid") {
+                        Location pickup = Location::getLocationFromInput();
+                        if (!Location::isValidLocation(pickup.getX(), pickup.getY())) {
                             cout << "Invalid pickup location!" << endl;
                             continue;
                         }
 
-                        cout << "Enter drop-off location (coordinates or name): ";
-                        cin >> input;
-                        if (isdigit(input[0])) {
-                            int x = stoi(input);
-                            int y;
-                            cin >> y;
-                            destination = Location::getLocationByCoordinates(x, y);
-                        } else {
-                            destination = Location::getLocationByName(input);
-                        }
+                        // Clear the input buffer before reading the next input
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-                        if (destination.getName() == "invalid") {
+                        Location destination = Location::getLocationFromInput();
+                        if (!Location::isValidLocation(destination.getX(), destination.getY())) {
                             cout << "Invalid drop-off location!" << endl;
                             continue;
-                        }
+                        } 
 
-                        cout << "Enter any special instructions for the driver: ";
-                        string specialInstructions;
-                        cin.ignore();
-                        getline(cin, specialInstructions);
+                        // Add edge from pickup to destination
+                        Location::addEdge(pickup.getX(), pickup.getY(), destination.getX(), destination.getY(), pickup.distanceTo(destination));
 
                         double distance = pickup.distanceTo(destination);
-                        cout << "Ride requested from " << pickup.getName() << " to " << destination.getName() << " (" << distance << " km)" << endl;
-
-                        // Here you would normally assign a driver and handle the ride request
-                        // For simplicity, we'll just add a dummy ride to the user's history
-                        user.addRideToHistory(1, "Completed");
+                        cout << "\n૮₍˶ᵔᵕᵔ˶₎ა Ride requested from " << pickup.getName() << " to " << destination.getName() << " (" << distance << " km)" << endl;
 
                         // Show available drivers
                         vector<Driver> availableDrivers = Driver::getAvailableDrivers(pickup);
                         if (availableDrivers.empty()) {
-                            cout << "No drivers available." << endl;
+                            cout << "\nNo drivers available." << endl;
                         } else {
-                            cout << "Available drivers:" << endl;
-                            for (size_t i = 0; i < availableDrivers.size(); ++i) {
-                                cout << i + 1 << ". " << availableDrivers[i].getName() << " (Rating: " << availableDrivers[i].getRating() << ")" << endl;
+                            // Sort drivers by rating using a priority queue
+                            PriorityQueue<Driver> driverQueue;
+                            for (const auto& driver : availableDrivers) {
+                                driverQueue.push(driver);
                             }
-                            cout << "Select a driver: ";
+
+                            cout << "\n‧₊˚ ┊ Available drivers:" << endl;
+                            vector<Driver> sortedDrivers;
+                            while (!driverQueue.isEmpty()) {
+                                sortedDrivers.push_back(driverQueue.pop());
+                            }
+
+                            // Get the current time of day
+                            auto now = chrono::system_clock::now();
+                            time_t now_c = chrono::system_clock::to_time_t(now);
+                            tm local_tm = *localtime(&now_c);
+                            int currentHour = local_tm.tm_hour;
+
+                            for (size_t i = 0; i < sortedDrivers.size(); ++i) {
+                                double fare = sortedDrivers[i].calculateFare(distance, currentHour, false, 1.0); // Example values for surgePricing and trafficFactor
+                                fare = round(fare * 4) / 4.0; // Round to the nearest quarter
+                                cout << i + 1 << ". " << sortedDrivers[i].getName() << " (Rating: " << sortedDrivers[i].getRating() << ", Fare: $" << fare << ")" << endl;
+                            }
+
+                            cout << "\n‧₊˚ ┊ Select a driver: ";
                             int driverIndex;
                             cin >> driverIndex;
-                            if (driverIndex < 1 || driverIndex > availableDrivers.size()) {
+                            if (driverIndex < 1 || driverIndex > sortedDrivers.size()) {
                                 cout << "Invalid driver selection." << endl;
                             } else {
-                                Driver selectedDriver = availableDrivers[driverIndex - 1];
-                                cout << "Driver " << selectedDriver.getName() << " selected." << endl;
+                                Driver selectedDriver = sortedDrivers[driverIndex - 1];
+                                cout << " ↳ Driver " << selectedDriver.getName() << " selected! " << endl;
+
+                                // Calculate fare
+                                double fare = selectedDriver.calculateFare(distance, currentHour, false, 1.0); // Example values for surgePricing and trafficFactor
+                                fare = round(fare * 4) / 4.0; // Round to the nearest quarter
+                                cout << " ↳ Fare: $" << fare << endl;
 
                                 // Simulate ride completion
-                                cout << "Ride completed. Please rate your driver (1-5): ";
+                                cout << "\n˗ˏˋ Ride completed. Please rate your driver (1-5): ";
                                 double rating;
                                 cin >> rating;
                                 selectedDriver.addRating(rating);
-                                cout << "Thank you for your feedback!" << endl;
+                                Driver::updateDriverData(selectedDriver); // Update driver data in file
+                                cout << "\nThank you for your feedback!\n      · · ─ ·𖥸· ─ · ·" << endl;
+
+                                // Update driver location to drop-off location
+                                selectedDriver.updateLocation(destination.getX(), destination.getY());
+
+                                // Update user location to drop-off location
+                                user.updateLocation(destination.getX(), destination.getY());
+
+                                // Add ride to user and driver history
+                                user.addRideToHistory(1, "Completed", pickup, destination, selectedDriver.getName());
+                                selectedDriver.addRideToHistory(1, "Completed", pickup, destination, fare);
                             }
                         }
                     } else if (userAction == 2) {
-                        vector<pair<int, string>> history = user.getRideHistory();
-                        if (history.empty()) {
-                            cout << "No rides taken by user yet." << endl;
-                        } else {
-                            for (const auto &ride : history) {
-                                cout << "Ride ID: " << ride.first << ", Status: " << ride.second << endl;
-                            }
+                        vector<tuple<int, string, Location, Location, string>> history = user.getRideHistory();
+                        cout << "‧₊˚ ┊ Ride History:" << endl;
+                        for (const auto& ride : history) {
+                            cout << "\n → Ride ID: " << get<0>(ride) << "\nStatus: " << get<1>(ride) 
+                                 << "\nPickup: " << get<2>(ride).getName() << "\nDestination: " << get<3>(ride).getName()
+                                 << "\nDriver: " << get<4>(ride) << endl;
                         }
+                        cout << "══════════════════════════" << endl;
                     } else if (userAction == 3) {
+                        user.viewProfile();
+                    } else if (userAction == 4) {
                         break;
                     }
                 }
             }
         } else if (userChoice == 2) {
             string name, phoneNumber, password;
-            cout << "Enter name: ";
+            cout << " → Enter name: ";
             cin >> name;
-            cout << "Enter phone number: ";
+            cout << " → Enter phone number: ";
             cin >> phoneNumber;
-            cout << "Enter password: ";
+            cout << " → Enter password: ";
             cin >> password;
-            try {
-                User user(name, phoneNumber, password);
-                user.registerUser();
-            } catch (const out_of_range &e) {
-                cout << e.what() << endl;
-            }
+            User user(name, phoneNumber, password);
+            user.registerUser();
         } else if (userChoice == 3) {
             break;
         }
@@ -171,7 +186,7 @@ void userInterface() {
 
 void driverInterface() {
     while (true) {
-        cout << "Please choose an option: " << endl;
+        cout << "‧₊˚ ┊ Please choose an option: " << endl;
         cout << "1. Driver Login" << endl;
         cout << "2. Driver Register" << endl;
         cout << "3. Back" << endl;
@@ -181,79 +196,79 @@ void driverInterface() {
 
         if (driverChoice == 1) {
             string driverID, password;
-            cout << "Enter driverID: ";
+            cout << " → Enter driverID: ";
             cin >> driverID;
-            cout << "Enter password: ";
+            cout << " → Enter password: ";
             cin >> password;
             Driver driver;
             if (driver.login(driverID, password)) {
-                cout << "Enter your current location (coordinates): ";
-                int x, y;
-                cin >> x >> y;
-                driver.updateLocation(x, y);
+                // Ask for location if not already set
+                if (driver.getLocation() == make_pair(0.0, 0.0)) {
+                    Location location = Location::getLocationFromInput();
+                    if (!location.isValid()) {
+                        cout << ".ᐟ Invalid location!" << endl;
+                    } else {
+                        driver.updateLocation(location.getX(), location.getY());
+                        cout << "\n . ݁₊ ⊹ Location updated." << endl;
+                    }
+                }
 
                 while (true) {
-                    cout << "Please choose an option: " << endl;
-                    cout << "1. Turn Availability On" << endl;
-                    cout << "2. Receive Ride Requests" << endl;
-                    cout << "3. Log Out" << endl;
+                    cout << "‧₊˚ ┊ Please choose an option: " << endl;
+                    cout << "1. Set Availability" << endl;
+                    cout << "2. Update Location" << endl;
+                    cout << "3. View Profile" << endl;
+                    cout << "4. View Ride History" << endl;
+                    cout << "5. Log Out" << endl;
 
-                    int driverAction = getValidatedInput(1, 3);
+                    int driverAction = getValidatedInput(1, 5);
                     if (driverAction == -1) continue;
 
                     if (driverAction == 1) {
-                        driver.setAvailability(true);
-                        cout << "Availability turned on." << endl;
+                        bool availability;
+                        cout << "\n → Enter availability (1 for available, 0 for unavailable): ";
+                        cin >> availability;
+                        driver.setAvailability(availability);
+                        cout << "\n˗ˏˋAvailability updated." << endl;
                     } else if (driverAction == 2) {
-                        vector<RideRequest> rideRequests = RideRequest::getRideRequestsWithinRadius(driver.getLocation(), 7);
-                        if (rideRequests.empty()) {
-                            cout << "No ride requests available." << endl;
+                        Location location = Location::getLocationFromInput();
+                        if (!location.isValid()) {
+                            cout << "\n.ᐟ Invalid location!" << endl;
                         } else {
-                            cout << "Available ride requests:" << endl;
-                            for (size_t i = 0; i < rideRequests.size(); ++i) {
-                                cout << i + 1 << ". Pickup: " << rideRequests[i].getPickupLocation().getName() << ", Drop-off: " << rideRequests[i].getDropoffLocation().getName() << endl;
-                            }
-                            cout << "Select a ride request to accept: ";
-                            int requestIndex;
-                            cin >> requestIndex;
-                            if (requestIndex < 1 || requestIndex > rideRequests.size()) {
-                                cout << "Invalid ride request selection." << endl;
-                            } else {
-                                RideRequest selectedRequest = rideRequests[requestIndex - 1];
-                                cout << "Ride request accepted. Pickup: " << selectedRequest.getPickupLocation().getName() << ", Drop-off: " << selectedRequest.getDropoffLocation().getName() << endl;
-
-                                // Simulate ride completion
-                                cout << "Ride completed. Please rate your ride (1-5): ";
-                                double rating;
-                                cin >> rating;
-                                driver.addRating(rating);
-                                cout << "Thank you for your feedback!" << endl;
-                            }
+                            driver.updateLocation(location.getX(), location.getY());
+                            cout << "\n . ݁₊ ⊹ Location updated." << endl;
                         }
                     } else if (driverAction == 3) {
+                        driver.viewProfile();
+                    } else if (driverAction == 4) {
+                        vector<tuple<int, string, Location, Location, double>> history = driver.getRideHistory();
+                        cout << "‧₊˚ ┊ Ride History:" << endl;
+                        for (const auto& ride : history) {
+                            cout << " → Ride ID: " << get<0>(ride) << ", \nStatus: " << get<1>(ride) 
+                                 << ", \nPickup: (" << get<2>(ride).getX() << ", " << get<2>(ride).getY() << ")"
+                                 << ", \nDestination: (" << get<3>(ride).getX() << ", " << get<3>(ride).getY() << ")"
+                                 << ", \nFare: $" << get<4>(ride) << endl;
+                        }
+                    } else if (driverAction == 5) {
                         break;
                     }
                 }
             }
         } else if (driverChoice == 2) {
-            string name, password, vehicleRegistration, phoneNumber;
+            string name, phoneNumber, password, vehicleRegistration;
             double ratePerKm;
-            cout << "Enter name: ";
+            cout << " → Enter name: ";
             cin >> name;
-            cout << "Enter password: ";
-            cin >> password;
-            cout << "Enter vehicle registration: ";
-            cin >> vehicleRegistration;
-            cout << "Enter phone number: ";
+            cout << " → Enter phone number: ";
             cin >> phoneNumber;
-            cout << "Enter rate per km: ";
+            cout << " → Enter password: ";
+            cin >> password;
+            cout << " → Enter vehicle registration: ";
+            cin >> vehicleRegistration;
+            cout << " → Enter rate per km: ";
             cin >> ratePerKm;
-            try {
-                Driver driver(name, password, vehicleRegistration, phoneNumber, ratePerKm);
-                driver.registerDriver();
-            } catch (const out_of_range &e) {
-                cout << e.what() << endl;
-            }
+            Driver driver(name, password, vehicleRegistration, phoneNumber, ratePerKm);
+            driver.registerDriver();
         } else if (driverChoice == 3) {
             break;
         }

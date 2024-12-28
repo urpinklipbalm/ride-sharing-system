@@ -28,16 +28,18 @@ void PriorityQueue<T>::heapifyUp(int index) {
 
 template <typename T>
 void PriorityQueue<T>::heapifyDown(int index) {
+    int largest = index;
     int leftChild = 2 * index + 1;
     int rightChild = 2 * index + 2;
-    int largest = index;
 
     if (leftChild < heap.size() && heap[leftChild] > heap[largest]) {
         largest = leftChild;
     }
+
     if (rightChild < heap.size() && heap[rightChild] > heap[largest]) {
         largest = rightChild;
     }
+
     if (largest != index) {
         std::swap(heap[index], heap[largest]);
         heapifyDown(largest);
@@ -53,13 +55,13 @@ void PriorityQueue<T>::push(T data) {
 template <typename T>
 T PriorityQueue<T>::pop() {
     if (isEmpty()) {
-        throw std::out_of_range("PriorityQueue is empty");
+        throw std::runtime_error("PriorityQueue is empty");
     }
-    T data = heap[0];
-    heap[0] = heap.back();
+    T top = heap.front();
+    heap.front() = heap.back();
     heap.pop_back();
     heapifyDown(0);
-    return data;
+    return top;
 }
 
 template <typename T>

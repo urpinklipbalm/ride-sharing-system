@@ -1,3 +1,4 @@
+// filepath: /Users/asma/Desktop/📎/nust/sophmore/data structure + algorithms/project/ride-sharing-system/src/pricing/Pricing.h
 #ifndef PRICING_H
 #define PRICING_H
 
@@ -7,7 +8,7 @@
 class Pricing {
 public:
     Pricing();
-    double calculatePrice(double distance, int timeOfDay, bool surgePricing, double trafficFactor);
+    double calculatePrice(double distance, int timeOfDay, bool surgePricing, double trafficFactor) const; // Mark as const
     void addHistoricalPrice(double price);
     std::vector<double> getHistoricalPrices() const;
 

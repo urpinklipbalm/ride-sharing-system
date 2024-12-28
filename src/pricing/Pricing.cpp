@@ -1,6 +1,7 @@
 #include "Pricing.h"
 #include <cmath>
 #include <algorithm>
+#include <chrono>
 
 Pricing::Pricing() 
     : baseRate(5.0), perMileRate(2.0), perMinuteRate(0.5), surgeMultiplier(1.5), trafficMultiplier(1.2) {
@@ -11,7 +12,7 @@ Pricing::Pricing()
     timeOfDayMultiplier[18] = 1.3; // Evening
 }
 
-double Pricing::calculatePrice(double distance, int timeOfDay, bool surgePricing, double trafficFactor) {
+double Pricing::calculatePrice(double distance, int timeOfDay, bool surgePricing, double trafficFactor) const {
     double timeMultiplier = 1.0;
     auto it = timeOfDayMultiplier.lower_bound(timeOfDay);
     if (it != timeOfDayMultiplier.end()) {
@@ -26,7 +27,6 @@ double Pricing::calculatePrice(double distance, int timeOfDay, bool surgePricing
     }
     price *= trafficFactor;
 
-    addHistoricalPrice(price);
     return price;
 }
 
