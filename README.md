@@ -47,7 +47,5 @@ The Ride-Sharing System is designed to facilitate the management of users and dr
 1. **Ensure all dependencies are installed**: Make sure you have a C++ compiler installed (e.g., `g++`).
 
 2. **Compile the project**: Navigate to the project directory and compile the source files. You can use the following command in the terminal:
-   ```sh
-   g++ -o RideSharingSystem src/*.cpp src/user/*.cpp src/driver/*.cpp src/location/*.cpp src/utils/*.cpp src/rides/*.cpp src/graph/*.cpp src/data\ structures/*.cpp src/bloom_filter/*.cpp src/pricing/*.cpp src/rating/*.cpp src/TrafficUpdates.cpp
-   then run the executable:
-   ./RideSharingSystem
+   g++ -I./src/user -I./src/driver -I./src/location -I./src/graph -I./src/utils -I./src/rides -I./src/data_structures -I./src/bloom_filter -I./src/pricing -I./src/rating -o RideSharingSystem src/main.cpp src/graph/Graph.cpp src/rides/RideRequest.cpp src/driver/Driver.cpp src/user/User.cpp src/utils/Utils.cpp src/location/Location.cpp src/pricing/Pricing.cpp src/rating/Rating.cpp src/TrafficUpdates.cpp src/RideQueue.cpp src/RideHistory.cpp src/bloom_filter/BloomFilter.cpp
+./RideSharingSystem

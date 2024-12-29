@@ -45,14 +45,6 @@ bool Driver::login(const std::string& driverID, const std::string& password) {
     return false;
 }
 
-void Driver::setAvailability(bool availability) {
-    available = availability;
-    if (availability) {
-        availabilityFilter.add(driverID);
-    }
-    updateDriverData(*this);
-}
-
 bool Driver::isAvailable() const {
     return available; // Check the member variable directly
 }
@@ -140,12 +132,23 @@ bool Driver::loadDriverData(const std::string& driverID, Driver& driver) {
                 driver.rideHistory.push_back({rideID, status, pickup, destination, fare});
             }
 
+            // cout << "Driver " << driverID << " loaded with availability: " << avail << endl; // Debug print
+
             file.close();
             return true;
         }
     }
     file.close();
     return false;
+}
+
+void Driver::setAvailability(bool availability) {
+    available = availability;
+    if (availability) {
+        availabilityFilter.add(driverID);
+    }
+    updateDriverData(*this);
+    cout << "Driver " << driverID << " set to availability: " << availability << endl; // Debug print
 }
 
 vector<Driver> Driver::getAvailableDrivers(const Location& pickupLocation) {
@@ -164,7 +167,7 @@ vector<Driver> Driver::getAvailableDrivers(const Location& pickupLocation) {
         if (!(iss >> id >> name >> phone >> pass >> vehicleReg >> rate >> lat >> lon >> avail >> rating >> totalRatings >> totalCompletedRides)) {
             continue; // Skip lines that don't match the expected format
         }
-        cout << "Checking driver: " << id << ", Available: " << avail << ", Location: (" << lat << ", " << lon << ")" << endl; // Debug print
+        // cout << "Checking driver: " << id << ", Available: " << avail << ", Location: (" << lat << ", " << lon << ")" << endl; // Debug print
         if (avail) {
             Driver driver;
             driver.driverID = id;
@@ -192,15 +195,15 @@ vector<Driver> Driver::getAvailableDrivers(const Location& pickupLocation) {
             }
 
             double distanceToPickup = sqrt(pow(lat - pickupLocation.getX(), 2) + pow(lon - pickupLocation.getY(), 2));
-            cout << "Distance to pickup: " << distanceToPickup << " km" << endl; // Debug print
+            // cout << "Distance to pickup: " << distanceToPickup << " km" << endl; // Debug print
             if (distanceToPickup <= 7.0) { // Assuming 7 km radius
                 availableDrivers.push_back(driver);
-                cout << "Driver " << id << " is within the radius and available." << endl; // Debug print
+                // cout << "Driver " << id << " is within the radius and available." << endl; // Debug print
             } else {
-                cout << "Driver " << id << " is not within the radius." << endl; // Debug print
+                // cout << "Driver " << id << " is not within the radius." << endl; // Debug print
             }
         } else {
-            cout << "Driver " << id << " is not available." << endl; // Debug print
+            // cout << "Driver " << id << " is not available." << endl; // Debug print
         }
     }
     file.close();

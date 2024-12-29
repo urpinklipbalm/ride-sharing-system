@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
+#include <sstream>
 #include "user/User.h"
 #include "driver/Driver.h"
 #include "location/Location.h"
@@ -31,9 +32,17 @@ int main() {
     double ratePerKm, latitude, longitude, rating;
     int totalRatings, totalCompletedRides;
     bool available;
-    while (file >> driverID >> name >> phoneNumber >> password >> vehicleRegistration >> ratePerKm >> latitude >> longitude >> available >> rating >> totalRatings >> totalCompletedRides) {
+    string line;
+    while (getline(file, line)) {
+        istringstream iss(line);
+        if (!(iss >> driverID >> name >> phoneNumber >> password >> vehicleRegistration >> ratePerKm >> latitude >> longitude >> available >> rating >> totalRatings >> totalCompletedRides)) {
+            // cout << "Skipping invalid line: " << line << endl; // Debug print for invalid lines
+            continue; // Skip invalid lines
+        }
+        // cout << "Read driver: " << driverID << " with availability: " << available << endl; // Debug print for each driver
         if (available) {
             driverAvailabilityFilter.add(driverID);
+            // cout << "Adding to BloomFilter: " << driverID << endl; // Debug print
         }
     }
     file.close();
@@ -227,7 +236,7 @@ void driverInterface() {
                 if (driverAvailabilityFilter.contains(driverID)) {
                     cout << "\n ↪ Driver is available." << endl;
                 } else {
-                    cout << "\nDriver is not available." << endl;
+                    cout << "\n ↪ Driver is not available." << endl;
                 }
 
                 // Ask for location if not already set
@@ -262,7 +271,7 @@ void driverInterface() {
                         } else {
                             // Note: Bloom Filter does not support removal, so we can't remove the driver from the filter
                         }
-                        cout << "\n˗ˏˋAvailability updated." << endl;
+                        cout << "\n˗ˏˋ Availability updated." << endl;
                     } else if (driverAction == 2) {
                         Location location = Location::getLocationFromInput();
                         if (!location.isValid()) {
@@ -277,10 +286,10 @@ void driverInterface() {
                         vector<tuple<int, string, Location, Location, double>> history = driver.getRideHistory();
                         cout << "\n‧₊˚ ┊ Ride History:" << endl;
                         for (const auto& ride : history) {
-                            cout << " → Ride ID: " << get<0>(ride) << ", \nStatus: " << get<1>(ride) 
-                                 << ", \nPickup: (" << get<2>(ride).getX() << ", " << get<2>(ride).getY() << ")"
-                                 << ", \nDestination: (" << get<3>(ride).getX() << ", " << get<3>(ride).getY() << ")"
-                                 << ", \nFare: $" << get<4>(ride) << endl;
+                            cout << " → Ride ID: " << get<0>(ride) << "\nStatus: " << get<1>(ride) 
+                                 << "\nPickup: " << get<2>(ride).getName() << ""
+                                 << "\nDestination: "<< get<3>(ride).getName() << ""
+                                 << "\nFare $" << get<4>(ride) << endl;
                         }
                     } else if (driverAction == 5) {
                         break;
