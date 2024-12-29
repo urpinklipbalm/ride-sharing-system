@@ -5,6 +5,8 @@
 #include "../location/Location.h"
 #include "../pricing/Pricing.h"
 #include "../rating/Rating.h"
+#include "../bloom_filter/BloomFilter.h"
+
 
 class Driver {
 private:
@@ -46,6 +48,8 @@ public:
     static bool loadDriverData(const std::string& driverID, Driver& driver);
     static void updateDriverData(const Driver& driver);
     void viewProfile() const;
+    static BloomFilter availabilityFilter;
+    std::string getDriverID() const;
 
     bool operator>(const Driver& other) const {
         return getRating() > other.getRating();

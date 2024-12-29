@@ -57,7 +57,7 @@ double Location::distanceTo(const Location& other) const {
 
 Location Location::getLocationFromInput() {
     string input;
-    cout << "Enter location (coordinates): ";
+    cout << "⚲ Enter location (coordinates): ";
     getline(cin >> ws, input);
 
     if (input.find(',') != string::npos) {
@@ -78,9 +78,6 @@ Location Location::getLocationFromInput() {
 }
 
 Location Location::getLocationByCoordinates(int x, int y) {
-    if (x % 2 == 0 || y % 2 == 0 || x < 1 || x > 19 || y < 1 || y > 19) {
-        return Location();
-    }
     for (const auto& facility : facilities) {
         for (const auto& loc : facility.second) {
             if (loc.getX() == x && loc.getY() == y) {
@@ -88,7 +85,7 @@ Location Location::getLocationByCoordinates(int x, int y) {
             }
         }
     }
-    return Location();
+    return Location(x, y, "Unknown Location");
 }
 
 Location Location::getLocationByName(const std::string& name) {

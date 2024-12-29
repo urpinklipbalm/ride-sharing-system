@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <chrono>
 #include "user/User.h"
@@ -8,14 +9,34 @@
 #include "rides/RideRequest.h"
 #include "graph/Graph.h"
 #include "data structures/PriorityQueue.h"
+#include "bloom_filter/BloomFilter.h"
 
 using namespace std;
 
 void userInterface();
 void driverInterface();
 
+BloomFilter driverAvailabilityFilter(1000, 5); // Bloom Filter for driver availability
+
 int main() {
-    cout << "\n‧₊˚✧  Welcome to the SmartRide  ✧˚₊‧\n" << endl;
+    cout << "\n‧₊˚✧  Welcome to the SmartRide  ✧˚₊‧" << endl;
+
+    // Load driver availability into Bloom Filter
+    ifstream file("src/driverdata.txt");
+    if (!file) {
+        cout << "Failed to open src/driverdata.txt" << endl;
+        return 1;
+    }
+    string driverID, name, phoneNumber, password, vehicleRegistration;
+    double ratePerKm, latitude, longitude, rating;
+    int totalRatings, totalCompletedRides;
+    bool available;
+    while (file >> driverID >> name >> phoneNumber >> password >> vehicleRegistration >> ratePerKm >> latitude >> longitude >> available >> rating >> totalRatings >> totalCompletedRides) {
+        if (available) {
+            driverAvailabilityFilter.add(driverID);
+        }
+    }
+    file.close();
 
     while (true) {
         cout << "\n‧₊˚ ┊ Are you a User or a Driver?\n" << endl;
@@ -116,7 +137,7 @@ void userInterface() {
                             for (size_t i = 0; i < sortedDrivers.size(); ++i) {
                                 double fare = sortedDrivers[i].calculateFare(distance, currentHour, false, 1.0); // Example values for surgePricing and trafficFactor
                                 fare = round(fare * 4) / 4.0; // Round to the nearest quarter
-                                cout << i + 1 << ". " << sortedDrivers[i].getName() << " (Rating: " << sortedDrivers[i].getRating() << ", Fare: $" << fare << ")" << endl;
+                                cout << i + 1 << ". " << sortedDrivers[i].getName() << " (Rating: " << sortedDrivers[i].getRating() << " ➜ $" << fare << ")" << endl;
                             }
 
                             cout << "\n‧₊˚ ┊ Select a driver: ";
@@ -154,7 +175,7 @@ void userInterface() {
                         }
                     } else if (userAction == 2) {
                         vector<tuple<int, string, Location, Location, string>> history = user.getRideHistory();
-                        cout << "‧₊˚ ┊ Ride History:" << endl;
+                        cout << "\n‧₊˚ ┊ Ride History:" << endl;
                         for (const auto& ride : history) {
                             cout << "\n → Ride ID: " << get<0>(ride) << "\nStatus: " << get<1>(ride) 
                                  << "\nPickup: " << get<2>(ride).getName() << "\nDestination: " << get<3>(ride).getName()
@@ -186,7 +207,7 @@ void userInterface() {
 
 void driverInterface() {
     while (true) {
-        cout << "‧₊˚ ┊ Please choose an option: " << endl;
+        cout << "\n‧₊˚ ┊ Please choose an option: \n" << endl;
         cout << "1. Driver Login" << endl;
         cout << "2. Driver Register" << endl;
         cout << "3. Back" << endl;
@@ -196,12 +217,19 @@ void driverInterface() {
 
         if (driverChoice == 1) {
             string driverID, password;
-            cout << " → Enter driverID: ";
+            cout << "\n → Enter driverID: ";
             cin >> driverID;
             cout << " → Enter password: ";
             cin >> password;
             Driver driver;
             if (driver.login(driverID, password)) {
+                // Check availability using Bloom Filter
+                if (driverAvailabilityFilter.contains(driverID)) {
+                    cout << "\n ↪ Driver is available." << endl;
+                } else {
+                    cout << "\nDriver is not available." << endl;
+                }
+
                 // Ask for location if not already set
                 if (driver.getLocation() == make_pair(0.0, 0.0)) {
                     Location location = Location::getLocationFromInput();
@@ -214,7 +242,7 @@ void driverInterface() {
                 }
 
                 while (true) {
-                    cout << "‧₊˚ ┊ Please choose an option: " << endl;
+                    cout << "\n‧₊˚ ┊ Please choose an option: \n" << endl;
                     cout << "1. Set Availability" << endl;
                     cout << "2. Update Location" << endl;
                     cout << "3. View Profile" << endl;
@@ -229,6 +257,11 @@ void driverInterface() {
                         cout << "\n → Enter availability (1 for available, 0 for unavailable): ";
                         cin >> availability;
                         driver.setAvailability(availability);
+                        if (availability) {
+                            driverAvailabilityFilter.add(driver.getDriverID());
+                        } else {
+                            // Note: Bloom Filter does not support removal, so we can't remove the driver from the filter
+                        }
                         cout << "\n˗ˏˋAvailability updated." << endl;
                     } else if (driverAction == 2) {
                         Location location = Location::getLocationFromInput();
@@ -242,7 +275,7 @@ void driverInterface() {
                         driver.viewProfile();
                     } else if (driverAction == 4) {
                         vector<tuple<int, string, Location, Location, double>> history = driver.getRideHistory();
-                        cout << "‧₊˚ ┊ Ride History:" << endl;
+                        cout << "\n‧₊˚ ┊ Ride History:" << endl;
                         for (const auto& ride : history) {
                             cout << " → Ride ID: " << get<0>(ride) << ", \nStatus: " << get<1>(ride) 
                                  << ", \nPickup: (" << get<2>(ride).getX() << ", " << get<2>(ride).getY() << ")"

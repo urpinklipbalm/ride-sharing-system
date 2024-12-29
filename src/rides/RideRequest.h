@@ -11,6 +11,7 @@ private:
     Location dropoffLocation;
 
 public:
+    RideRequest() : id(0), pickupLocation(Location()), dropoffLocation(Location()) {}
     RideRequest(int id, const Location& pickupLocation, const Location& dropoffLocation);
     int getID() const;
     Location getPickupLocation() const;

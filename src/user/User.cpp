@@ -17,16 +17,25 @@ User::User(const std::string& name, const std::string& phoneNumber, const std::s
 void User::registerUser() {
     // Save user data to a file or database
     saveUserData();
-    cout << "User registered successfully. Your userID is: " << userID << endl;
+    cout << "\n૮₍˶ᵔᵕᵔ˶₎ა User registered successfully. Your userID is: " << userID << endl;
 }
 
 bool User::login(const std::string& userID, const std::string& password) {
     User user;
-    if (loadUserData(userID, user) && user.password == password) {
-        *this = user;
-        return true;
+    // cout << "Attempting to load user data for ID: " << userID << endl; // Debug print
+    if (loadUserData(userID, user)) {
+        // cout << "User data loaded. Checking password..." << endl; // Debug print
+        if (user.password == password) {
+            *this = user;
+            // cout << "Login successful." << endl; // Debug print
+            return true;
+        } else {
+            // cout << "Password mismatch." << endl; // Debug print
+        }
+    } else {
+        // cout << "User ID not found." << endl; // Debug print
     }
-    cout << "Invalid userID or password." << endl;
+    cout << "\n⊘ Invalid userID or password." << endl;
     return false;
 }
 
@@ -54,22 +63,24 @@ std::string User::generateUserID(const std::string& name, const std::string& pho
 }
 
 void User::saveUserData() const {
-    ofstream file("userdata.txt", ios::app);
+    ofstream file("src/userdata.txt", ios::app); // Use ios::app to append data
     if (!file) {
-        throw runtime_error("Unable to save user data.");
+        throw runtime_error("\n⊘ Unable to save user data.");
     }
     file << userID << " " << name << " " << phoneNumber << " " << password << " " << latitude << " " << longitude << endl;
     file.close();
 }
 
 bool User::loadUserData(const std::string& userID, User& user) {
-    ifstream file("userdata.txt");
+    ifstream file("src/userdata.txt");
     if (!file) {
+        cout << "Failed to open src/userdata.txt" << endl; // Debug print
         return false;
     }
     string id, name, phone, pass;
     double lat, lon;
     while (file >> id >> name >> phone >> pass >> lat >> lon) {
+        // cout << "Checking userID: " << id << " against " << userID << endl; // Debug print
         if (id == userID) {
             user.userID = id;
             user.name = name;
@@ -86,10 +97,10 @@ bool User::loadUserData(const std::string& userID, User& user) {
 }
 
 void User::updateUserData(const User& user) {
-    ifstream file("userdata.txt");
-    ofstream tempFile("temp.txt");
+    ifstream file("src/userdata.txt");
+    ofstream tempFile("src/temp.txt");
     if (!file || !tempFile) {
-        throw runtime_error("Unable to update user data.");
+        throw runtime_error("\n⊘ Unable to update user data.");
     }
     string id, name, phone, pass;
     double lat, lon;
@@ -102,8 +113,8 @@ void User::updateUserData(const User& user) {
     }
     file.close();
     tempFile.close();
-    remove("userdata.txt");
-    rename("temp.txt", "userdata.txt");
+    remove("src/userdata.txt");
+    rename("src/temp.txt", "src/userdata.txt");
 }
 
 void User::viewProfile() const {
@@ -114,8 +125,8 @@ void User::viewProfile() const {
     cout << " — Current Location: (" << latitude << ", " << longitude << ")" << endl;
     cout << "\n ˚ ༘`✦ ˑ ִֶ 𓂃⊹ Ride History: " << endl;
     for (const auto& ride : rideHistory) {
-        cout << " → Ride ID: " << get<0>(ride) << ",\n — Status: " << get<1>(ride) 
-             << ",\n — Pickup: " << get<2>(ride).getName() << ",\n — Destination: " << get<3>(ride).getName()
-             << ",\n — Driver: " << get<4>(ride) << endl;
+        cout << " → Ride ID: " << get<0>(ride) << "\n — Status: " << get<1>(ride) 
+             << "\n — Pickup: " << get<2>(ride).getName() << "\n — Destination: " << get<3>(ride).getName()
+             << "\n — Driver: " << get<4>(ride) << endl;
     }
 }

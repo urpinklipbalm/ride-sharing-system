@@ -51,7 +51,7 @@ void Rating::updateTopRatedDrivers(const std::string& driverID, double averageRa
 void Rating::saveRatings() const {
     std::ofstream file("ratings.txt");
     if (!file) {
-        throw std::runtime_error("Unable to save ratings data.");
+        throw std::runtime_error("\n⊘ Unable to save ratings data.");
     }
     for (const auto& entry : driverRatings) {
         file << entry.first;
